@@ -1,8 +1,8 @@
 #!/bin/sh
 
-HADOOP_HOME=${HOME}/scratch/hadoop-3.3.1
+HADOOP_HOME=${HOME}/scratch/hadoop-3.3.0
 ALLUXIO_HOME=${HOME}/scratch/alluxio-2.6.2
-NODE_IP_PREFIX=10.149.1.
+NODE_IP_PREFIX=10.149.
 N_SPECIAL_NODES=2
 
 RESERVE_N=5
@@ -16,13 +16,14 @@ sleep 2 #sometimes getting the reservation takes a bit
 
 
 ### Get list of node numbers and extract their IP suffixes, stripping away leading zeroes
-nodeNumberList=$(preserve -llist | grep $reservationID | awk '{$1=$2=$3=$4=$5=$6=$7=$8=""; print $0}'  | awk 'BEGIN { first=1; last=${RESERVE_N}}{for (i = first;i<last;i++){print $i}print $last}'|grep -Eo '[0-9]{1,3}')
+nodeNumberList=$(preserve -llist | grep $reservationID | awk '{$1=$2=$3=$4=$5=$6=$7=$8=""; print $0}'  | awk 'BEGIN { first=1; last=5}{for (i = first;i<last;i++){print $i}print $last}'|grep -Eo '[0-9]{1,3}')
 for val in $nodeNumberList; do
-	val=${val:1:2} #strip first number (not needed)
+	temp=${val::1}
+	val=${val:1:2} #strip first number
 	if [ ${val::1} = '0' ]; then #strip second number if it is zero
 		val=${val:1}
 	fi
-	nodeIPList+=($val)
+	nodeIPList+=(${temp}.${val})
 done
 echo "nodeIPList: ${nodeIPList[@]} (done)"
 
@@ -33,8 +34,8 @@ masterNodeIP=${nodeIPList[1]}
 
 
 ### Set up Hadoop config files(sed command is some real magic)
-sed -i "/.*10.149.1..*/c <value>hdfs:\/\/${NODE_IP_PREFIX}$nameNodeIP:8020<\/value>\/" ${HADOOP_HOME}/etc/hadoop/core-site.xml
-sed -i "/.*10.149.1..*/c <value>${NODE_IP_PREFIX}${nameNodeIP}<\/value>" ${HADOOP_HOME}/etc/hadoop/yarn-site.xml
+sed -i "/.*${NODE_IP_PREFIX}.*/c <value>hdfs:\/\/${NODE_IP_PREFIX}$nameNodeIP:8020<\/value>\/" ${HADOOP_HOME}/etc/hadoop/core-site.xml
+sed -i "/.*${NODE_IP_PREFIX}.*/c <value>${NODE_IP_PREFIX}${nameNodeIP}<\/value>" ${HADOOP_HOME}/etc/hadoop/yarn-site.xml
 
 
 ### Clear then populate Hadoop worker file with reserved nodes, except for $N_SPECIAL_NODES
@@ -45,8 +46,8 @@ done
 
 
 ### Set up Alluxio config files
-sed -i "/.*alluxio.master.hostname*/c alluxio.master.hostname=10.149.1.${masterNodeIP}" ${ALLUXIO_HOME}/conf/alluxio-site.properties
-sed -i "/.*alluxio.master.mount.table.root.ufs.*/c alluxio.master.mount.table.root.ufs=hdfs:\/\/${NODE_IP_PREFIX}${masterNodeIP}" ${ALLUXIO_HOME}/conf/alluxio-site.properties
+sed -i "/.*alluxio.master.hostname*/c alluxio.master.hostname=${NODE_IP_PREFIX}${masterNodeIP}" ${ALLUXIO_HOME}/conf/alluxio-site.properties
+sed -i "/.*alluxio.master.mount.table.root.ufs.*/c alluxio.master.mount.table.root.ufs=hdfs:\/\/${NODE_IP_PREFIX}${nameNodeIP}" ${ALLUXIO_HOME}/conf/alluxio-site.properties
 
 
 ### Clear then populate Alluxio master and slave files

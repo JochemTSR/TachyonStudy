@@ -1,5 +1,5 @@
 #!/bin/sh
-HADOOP_HOME=${HOME}/scratch/hadoop-3.3.1
+HADOOP_HOME=${HOME}/scratch/hadoop-3.3.0
 NAMENODE_DATA_PATH=/local/ddps2110/namenode_data
 DATANODE_DATA_PATH=/local/ddps2110/datanode_data
 #NAMENODE_DATA_PATH=/local/ddps2110
@@ -30,7 +30,7 @@ function format {
 	${HADOOP_HOME}/sbin/workers.sh "rm -rf $DATANODE_DISK_DATADIR $DATANODE_RAM_DATADIR"
 	${HADOOP_HOME}/sbin/workers.sh "rm -rf $NAMENODE_DATA_PATH $DATANODE_DATA_PATH"
 	#${HADOOP_HOME}/sbin/workers.sh "rm -r /local/ddps2110/data/datanode_data"
-	${HADOOP_HOME}/bin/hdfs namenode -format
+	echo "Y" | ${HADOOP_HOME}/bin/hdfs namenode -format
 }
 
 
