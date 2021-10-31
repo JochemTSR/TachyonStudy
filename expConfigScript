@@ -16,7 +16,7 @@ sleep 2 #sometimes getting the reservation takes a bit
 
 
 ### Get list of node numbers and extract their IP suffixes, stripping away leading zeroes
-nodeNumberList=$(preserve -llist | grep $reservationID | awk '{$1=$2=$3=$4=$5=$6=$7=$8=""; print $0}'  | awk 'BEGIN { first=1; last=4}{for (i = first;i<last;i++){print $i}print $last}'|grep -Eo '[0-9]{1,3}')
+nodeNumberList=$(preserve -llist | grep $reservationID | awk '{$1=$2=$3=$4=$5=$6=$7=$8=""; print $0}'  | awk 'BEGIN { first=1; last=${RESERVE_N}}{for (i = first;i<last;i++){print $i}print $last}'|grep -Eo '[0-9]{1,3}')
 for val in $nodeNumberList; do
 	val=${val:1:2} #strip first number (not needed)
 	if [ ${val::1} = '0' ]; then #strip second number if it is zero
@@ -64,13 +64,5 @@ done
 ssh ddps2110@${NODE_IP_PREFIX}${nameNodeIP} "~/startHDFS.sh -f"
 
 
-### Start Alluxio on master node
-#There are still some configuation issues:
-#[2021-10-29 15:22:11][10.149.1.5] ERROR: mount RamFS /local/ddps2110/alluxio failed
-#[2021-10-29 15:22:11][10.149.1.5] Mount failed, not starting worker
-#So I'm really unsure where to mount the RAM.
-#this line on /home/ddps2110/scratch/alluxio-2.6.2/conf/alluxio-site.properties  is responsible of it.
-#alluxio.worker.tieredstore.level0.dirs.path=/local/ddps2110/alluxio
-
 #Uncomment the below line to start alluxio
-ssh ddps2110@${NODE_IP_PREFIX}${nameNodeIP} "~/startAlluxio.sh"
+ssh ddps2110@${NODE_IP_PREFIX}${masterNodeIP} "~/startAlluxio.sh"
