@@ -3,9 +3,9 @@
 HADOOP_HOME=${HOME}/scratch/hadoop-3.3.1
 ALLUXIO_HOME=${HOME}/scratch/alluxio-2.6.2
 NODE_IP_PREFIX=10.149.1.
-N_SPECIAL_NODES=1
+N_SPECIAL_NODES=2
 
-RESERVE_N=4
+RESERVE_N=5
 RESERVE_T=00:15:00
 
 
@@ -27,31 +27,36 @@ done
 echo "nodeIPList: ${nodeIPList[@]} (done)"
 
 
-### Clear then populate worker file with reserved nodes, except for $N_SPECIAL_NODES
+### Determine IP addresses of special nodes
+nameNodeIP=${nodeIPList[0]}
+masterNodeIP=${nodeIPList[1]}
+
+
+### Set up Hadoop config files(sed command is some real magic)
+sed -i "/.*10.149.1..*/c <value>hdfs:\/\/${NODE_IP_PREFIX}$nameNodeIP:8020<\/value>\/" ${HADOOP_HOME}/etc/hadoop/core-site.xml
+sed -i "/.*10.149.1..*/c <value>${NODE_IP_PREFIX}${nameNodeIP}<\/value>" ${HADOOP_HOME}/etc/hadoop/yarn-site.xml
+
+
+### Clear then populate Hadoop worker file with reserved nodes, except for $N_SPECIAL_NODES
  > ${HADOOP_HOME}/etc/hadoop/workers
 for ip in ${nodeIPList[@]:$N_SPECIAL_NODES}; do
 	echo "${NODE_IP_PREFIX}${ip}">>${HADOOP_HOME}/etc/hadoop/workers
 done
 
 
-### Get the IP of the NameNode and set in core-site.xml, alluxio-site.properties and yarn-site.xml (sed command is some real magic)
-nameNodeIP=${nodeIPList[0]}
-echo "nameNodeIP: $nameNodeIP"
-sed -i "/.*10.149.1..*/c <value>hdfs:\/\/${NODE_IP_PREFIX}$nameNodeIP:8020<\/value>\/" ${HADOOP_HOME}/etc/hadoop/core-site.xml
-sed -i "/.*10.149.1..*/c <value>${NODE_IP_PREFIX}${nameNodeIP}<\/value>" ${HADOOP_HOME}/etc/hadoop/yarn-site.xml
-sed -i "/.*alluxio.master.hostname*/c alluxio.master.hostname=10.149.1.${nameNodeIP}" ${ALLUXIO_HOME}/conf/alluxio-site.properties
-#Note: I think the below command is wrong and should be hdfs://${nameNodeIP}:8020
-sed -i "/.*alluxio.master.mount.table.root.ufs.*/c alluxio.master.mount.table.root.ufs=hdfs:\/\/${NODE_IP_PREFIX}${nameNodeIP}" ${ALLUXIO_HOME}/conf/alluxio-site.properties 
+### Set up Alluxio config files
+sed -i "/.*alluxio.master.hostname*/c alluxio.master.hostname=10.149.1.${masterNodeIP}" ${ALLUXIO_HOME}/conf/alluxio-site.properties
+sed -i "/.*alluxio.master.mount.table.root.ufs.*/c alluxio.master.mount.table.root.ufs=hdfs:\/\/${NODE_IP_PREFIX}${masterNodeIP}" ${ALLUXIO_HOME}/conf/alluxio-site.properties
 
 
 ### Clear then populate Alluxio master and slave files
  > /home/ddps2110/scratch/alluxio-2.6.2/conf/workers
  > /home/ddps2110/scratch/alluxio-2.6.2/conf/masters
-echo "10.149.1.${nodeIPList[0]}">>/home/ddps2110/scratch/alluxio-2.6.2/conf/masters
-echo "master 10.149.1.${nodeIPList[0]}"
-for val in ${nodeIPList[@]:$N_SPECIAL_NODES}; do
-     	echo "10.149.1.$val">>/home/ddps2110/scratch/alluxio-2.6.2/conf/workers
-	echo "slave 10.149.1.$val"
+echo "${NODE_IP_PREFIX}${masterNodeIP}">>/home/ddps2110/scratch/alluxio-2.6.2/conf/masters
+echo "master ${NODE_IP_PREFIX}${masterNodeIP}"
+for ip in ${nodeIPList[@]:$N_SPECIAL_NODES}; do
+     	echo "${NODE_IP_PREFIX}${ip}">>/home/ddps2110/scratch/alluxio-2.6.2/conf/workers
+	echo "slave ${NODE_IP_PREFIX}${ip}"
 done
 
 
