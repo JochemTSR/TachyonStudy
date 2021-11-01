@@ -26,6 +26,11 @@
 		<value>268435456</value>
 	</property>
 	<property>
+		<name>dfs.replication</name> 
+		<value>3</value> 
+		<description>Block Replication</description>
+	</property>
+	<property> 
 		<name>dfs.namenode.handler.count</name>
 		<value>16</value>
 	</property>

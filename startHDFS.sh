@@ -13,23 +13,23 @@ DATANODE_RAM_DATADIR=/dev/shm/ddps2110_ramdisk/datanode_data
 
 ### Create datanode data directories on disk
 function create_disk_data {
-	${HADOOP_HOME}/sbin/workers.sh "mkdir -p $DATANODE_DISK_DATADIR"
-	${HADOOP_HOME}/sbin/workers.sh "ln -snf $DATANODE_DISK_DATADIR $DATANODE_DATA_PATH"
+	${HADOOP_HOME}/sbin/workers.sh mkdir -p $DATANODE_DISK_DATADIR
+	${HADOOP_HOME}/sbin/workers.sh ln -snf $DATANODE_DISK_DATADIR $DATANODE_DATA_PATH
 }
 
 
 ### Create datanode data directories on RAM
 function create_ram_data {
-	${HADOOP_HOME}/sbin/workers.sh "mkdir -p $DATANODE_RAM_DATADIR"
-	${HADOOP_HOME}/sbin/workers.sh "ln -snf $DATANODE_RAM_DATADIR $DATANODE_DATA_PATH"
+	${HADOOP_HOME}/sbin/workers.sh mkdir -p $DATANODE_RAM_DATADIR
+	${HADOOP_HOME}/sbin/workers.sh ln -snf $DATANODE_RAM_DATADIR $DATANODE_DATA_PATH
 }
 
 
 ### Delete old filesystem and format a new one
 function format {
-	${HADOOP_HOME}/sbin/workers.sh "rm -rf $DATANODE_DISK_DATADIR $DATANODE_RAM_DATADIR"
-	${HADOOP_HOME}/sbin/workers.sh "rm -rf $NAMENODE_DATA_PATH $DATANODE_DATA_PATH"
-	#${HADOOP_HOME}/sbin/workers.sh "rm -r /local/ddps2110/data/datanode_data"
+	${HADOOP_HOME}/sbin/workers.sh rm -rf $DATANODE_DISK_DATADIR $DATANODE_RAM_DATADIR
+	${HADOOP_HOME}/sbin/workers.sh rm -rf $NAMENODE_DATA_PATH $DATANODE_DATA_PATH
+	#${HADOOP_HOME}/sbin/workers.sh rm -r /local/ddps2110/data/datanode_data
 	echo "Y" | ${HADOOP_HOME}/bin/hdfs namenode -format
 }
 

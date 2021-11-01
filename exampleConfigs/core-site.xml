@@ -25,4 +25,9 @@
 		<name>io.file.buffer.size</name>
 		<value>131072</value>
 	</property>
+	<property>
+  		<name>fs.alluxio.impl</name>
+  		<value>alluxio.hadoop.FileSystem</value>
+  		<description>The Alluxio FileSystem</description>
+	</property>
 </configuration>
