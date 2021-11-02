@@ -2,10 +2,11 @@
 
 HADOOP_HOME=${HOME}/scratch/hadoop-3.3.0
 ALLUXIO_HOME=${HOME}/scratch/alluxio-2.6.2
+SPARK_HOME=${HOME}/scratch/spark-3.2.0-bin-hadoop3.2
 NODE_IP_PREFIX=10.149
 N_SPECIAL_NODES=1
 
-RESERVE_N=33
+RESERVE_N=5
 RESERVE_T=00:15:00
 
 
@@ -35,7 +36,8 @@ echo "nodeIPList: ${nodeIPList[@]} (done)"
 
 ### Determine IP addresses of special nodes
 nameNodeIP=${nodeIPList[0]}
-masterNodeIP=${nodeIPList[0]}
+alluxioMasterIP=${nodeIPList[0]}
+sparkMasterIP=${nodeIPList[0]}
 
 
 ### Set up Hadoop config files(sed command is some real magic)
@@ -53,24 +55,37 @@ done
 
 
 ### Set up Alluxio config files
-sed -i "/.*alluxio.master.hostname*/c alluxio.master.hostname=${masterNodeIP}" ${ALLUXIO_HOME}/conf/alluxio-site.properties
+sed -i "/.*alluxio.master.hostname*/c alluxio.master.hostname=${alluxioMasterIP}" ${ALLUXIO_HOME}/conf/alluxio-site.properties
 sed -i "/.*alluxio.master.mount.table.root.ufs.*/c alluxio.master.mount.table.root.ufs=hdfs:\/\/${nameNodeIP}" ${ALLUXIO_HOME}/conf/alluxio-site.properties
 
 
 ### Clear then populate Alluxio master and slave files
- > /home/ddps2110/scratch/alluxio-2.6.2/conf/workers
- > /home/ddps2110/scratch/alluxio-2.6.2/conf/masters
-echo "${masterNodeIP}" >> /home/ddps2110/scratch/alluxio-2.6.2/conf/masters
-echo "master ${masterNodeIP}"
-for ip in ${nodeIPList[@]:$N_SPECIAL_NODES}; do
-     	echo "${ip}" >> /home/ddps2110/scratch/alluxio-2.6.2/conf/workers
-	echo "slave ${ip}"
+ > ${ALLUXIO_HOME}/conf/workers
+ > ${ALLUXIO_HOME}/conf/masters
+echo "${alluxioMasterIP}" >> ${ALLUXIO_HOME}/conf/masters
+echo "master ${alluxioMasterIP}"
+for ip in ${nodeIPList[@]:${N_SPECIAL_NODES}}; do
+     	echo "${ip}" >> ${ALLUXIO_HOME}/conf/workers
 done
 
 
-### Execute master script on HDFS namenode
-#ssh ddps2110@${nameNodeIP} "~/startHDFS.sh -f"
+### Set up Spark config files
+sed -i "s/SPARK_MASTER_HOST=.*/SPARK_MASTER_HOST=${sparkMasterIP}/; t; s/^/SPARK_MASTER_HOST=${sparkMasterIP}/" ${SPARK_HOME}/conf/spark-env.sh
 
 
-#Uncomment the below line to start alluxio
-#ssh ddps2110@${masterNodeIP} "~/startAlluxio.sh"
+### Populate Spark worker file
+ > ${SPARK_HOME}/conf/workers
+for ip in ${nodeIPList[@]:${N_SPECIAL_NODES}}; do
+	echo "${ip}" >> ${SPARK_HOME}/conf/workers
+done
+
+
+### Execute startup scripts
+#Execute Hadoop (HDFS+YARN) startup script on namenode
+ssh ddps2110@${nameNodeIP} "~/startHDFS.sh -f"
+
+#Execute Alluxio startup script on Alluxio master
+ssh ddps2110@${alluxioMasterIP} "~/startAlluxio.sh"
+
+# Execute Spark startup script on spark master
+ssh ddps2110@${sparkMasterIP} "~/startSpark.sh"
