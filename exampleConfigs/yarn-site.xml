@@ -16,6 +16,6 @@
 <!-- Site specific YARN configuration properties -->
 	<property>
 		<name>yarn.resourcemanager.hostname</name>
-<value>10.149.1.4</value>
+<value>10.149.0.59</value>
 	</property>
 </configuration>

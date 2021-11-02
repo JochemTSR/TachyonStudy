@@ -19,7 +19,7 @@
 <configuration>
 	<property>
 		<name>fs.defaultFS</name>
-<value>hdfs://10.149.1.4:8020</value>/
+<value>hdfs://10.149.0.59:8020</value>
 	</property>
 	<property>
 		<name>io.file.buffer.size</name>

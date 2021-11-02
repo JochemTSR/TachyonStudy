@@ -11,7 +11,7 @@ RESERVE_T=00:15:00
 
 
 ### Read script arguments
-while getopts ":n:" opt; do
+while getopts ":n:t:" opt; do
 	case $opt in
 		n)
 			if [ $OPTARG -lt $N_SPECIAL_NODES ]; then
@@ -20,6 +20,17 @@ while getopts ":n:" opt; do
 			fi
 			RESERVE_N=$OPTARG
 		;;
+		t)
+			RESERVE_T=$OPTARG
+		;;
+    :)
+      echo "ERROR: -${OPTARG} requires an argument."
+      exit_abnormal
+		;;
+    *)
+			echo "ERROR: Unknown argument specified"
+			exit_abnormal
+		;;	
 	esac
 done
 
@@ -32,7 +43,7 @@ sleep 2 #sometimes getting the reservation takes a bit
 ### Get list of node numbers and extract their IP suffixes, stripping away leading zeroes
 #nodeNumberList=$(preserve -llist | grep $reservationID | awk '{$1=$2=$3=$4=$5=$6=$7=$8=""; print $0}'  | awk 'BEGIN { first=1; last=5}{for (i = first;i<last;i++){print $i}print $last}'|grep -Eo '[0-9]{1,3}')
 nodeList=$(preserve -llist | grep ddps2110 | tail -1| cut -f 9-)
-echo $nodeList
+
 
 ### Populate list of node IPs
 for node in $nodeList; do
@@ -44,7 +55,6 @@ for node in $nodeList; do
 	fi
 	nodeIPList+=(${NODE_IP_PREFIX}.${temp}.${nodeNum})
 done
-echo "nodeIPList: ${nodeIPList[@]} (done)"
 
 
 ### Determine IP addresses of special nodes
@@ -56,8 +66,6 @@ sparkMasterIP=${nodeIPList[2]}
 ### Set up Hadoop config files(sed command is some real magic)
 sed -i "/<name>fs.defaultFS<\/name>/!b;n;c<value>hdfs:\/\/${nameNodeIP}:8020<\/value>" ${HADOOP_HOME}/etc/hadoop/core-site.xml
 sed -i "/<name>yarn.resourcemanager.hostname<\/name>/!b;n;c<value>${nameNodeIP}<\/value>" ${HADOOP_HOME}/etc/hadoop/yarn-site.xml
-#sed -i "/.*${NODE_IP_PREFIX}.*/c <value>hdfs:\/\/${NODE_IP_PREFIX}$nameNodeIP:8020<\/value>\/" ${HADOOP_HOME}/etc/hadoop/core-site.xml
-#sed -i "/.*${NODE_IP_PREFIX}.*/c <value>${NODE_IP_PREFIX}${nameNodeIP}<\/value>" ${HADOOP_HOME}/etc/hadoop/yarn-site.xml
 
 
 ### Clear then populate Hadoop worker file with reserved nodes, except for $N_SPECIAL_NODES
@@ -76,7 +84,6 @@ sed -i "/.*alluxio.master.mount.table.root.ufs.*/c alluxio.master.mount.table.ro
  > ${ALLUXIO_HOME}/conf/workers
  > ${ALLUXIO_HOME}/conf/masters
 echo "${alluxioMasterIP}" >> ${ALLUXIO_HOME}/conf/masters
-echo "master ${alluxioMasterIP}"
 for ip in ${nodeIPList[@]:${N_SPECIAL_NODES}}; do
      	echo "${ip}" >> ${ALLUXIO_HOME}/conf/workers
 done
@@ -106,6 +113,7 @@ done
 
 ### Echo information
 echo "Successfully initialized cluster consisting of ${RESERVE_N} nodes"
+echo "Nodes: ${nodeList}"
 echo "HDFS NameNode: ${nameNodeIP}"
 echo "Alluxio master: ${alluxioMasterIP}"
 echo "Spark master: ${sparkMasterIP}"
