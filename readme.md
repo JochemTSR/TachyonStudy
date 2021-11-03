@@ -12,4 +12,5 @@ the exampleConfigs folder contains some example configuration files that (and I 
 on your configuration. Hopefully they at least are useful as a starting point.
 
 Godspeed,
+
 Jochem Ram
