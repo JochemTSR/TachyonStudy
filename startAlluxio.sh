@@ -1,4 +1,8 @@
 #!/bin/bash
+# Start Alluxio master daemon on this node and worker
+# daemons on all worker nodes
+# By Jochem Ram (s2040328)
+
 ALLUXIO_HOME=${HOME}/scratch/alluxio-2.6.2
 SLAVE_DATA_DIR=/dev/shm/ddps2110_ramdisk/alluxio
 

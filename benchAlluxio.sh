@@ -1,12 +1,18 @@
 #!/bin/sh
 # Script that benchmarks filesystem performance of memHDFS compared to Alluxio.
-# Should be run from namenode of running HDFS cluster
+# Should be run from namenode of running HDFS+YARN+Alluxio cluster.
+# by Jochem Ram (s2040328)
 
 ALLUXIO_HOME=~/scratch/alluxio-2.6.2
+HADOOP_HOME=~/scratch/hadoop-3.3.0
 ALLUXIO_PORT=19998
-N_FILES=64
+HADOOP_PORT=8020
+N_FILES=16
 WRITE_SIZE=1GB
-ALLUXIO_OUT_FILE=~/dfsio_alluxio.txt
+N_RUNS=10
+
+ALLUXIO_WRITE_FILE=~/dfsio_alluxioWrite.txt
+ALLUXIO_READ_FILE=~/dfsio_alluxioRead.txt
 
 
 ### Stop HDFS, YARN and Alluxio daemons if running
@@ -28,5 +34,10 @@ sed -i "s/${HADOOP_PORT}/${ALLUXIO_PORT}/" ${HADOOP_HOME}/etc/hadoop/core-site.x
 export HADOOP_CLASSPATH=${ALLUXIO_HOME}/client/alluxio-2.6.2-client.jar:${HADOOP_CLASSPATH}
 
 
-### Run the benchmark from all workers
-${HADOOP_HOME}/bin/hadoop jar ${HADOOP_HOME}/share/hadoop/mapreduce/hadoop-mapreduce-client-jobclient-3.3.0-tests.jar TestDFSIO -Dalluxio.user.file.writetype.default=MUST_CACHE -libjars ${ALLUXIO_HOME}/client/alluxio-2.6.2-client.jar -write -nrFiles $N_FILES -fileSize $WRITE_SIZE -resfile $ALLUXIO_OUT_FILE
+### Run the DFSIO benchmark on Alluxio
+for i in $(seq 1 $N_RUNS); do
+	echo "write run $i" >> $ALLUXIO_WRITE_FILE
+	echo "read run $i" >> $ALLUXIO_READ_FILE
+	${HADOOP_HOME}/bin/hadoop jar ${HADOOP_HOME}/share/hadoop/mapreduce/hadoop-mapreduce-client-jobclient-3.3.0-tests.jar TestDFSIO -Dalluxio.user.file.writetype.default=MUST_CACHE -libjars ${ALLUXIO_HOME}/client/alluxio-2.6.2-client.jar -write -nrFiles $N_FILES -fileSize $WRITE_SIZE -resfile $ALLUXIO_WRITE_FILE
+	${HADOOP_HOME}/bin/hadoop jar ${HADOOP_HOME}/share/hadoop/mapreduce/hadoop-mapreduce-client-jobclient-3.3.0-tests.jar TestDFSIO -Dalluxio.user.file.writetype.default=MUST_CACHE -libjars ${ALLUXIO_HOME}/client/alluxio-2.6.2-client.jar -read -nrFiles $N_FILES -fileSize $WRITE_SIZE -resfile $ALLUXIO_READ_FILE
+done

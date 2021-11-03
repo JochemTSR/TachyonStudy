@@ -1,10 +1,13 @@
 #!/bin/sh
+# Reserve nodes in a das5 cluster and prepare these for
+# HDFS, Spark and Alluxio
+# by Jochem Ram (s2040328) and Gauthier Susset (s3273607)
 
 HADOOP_HOME=${HOME}/scratch/hadoop-3.3.0
 ALLUXIO_HOME=${HOME}/scratch/alluxio-2.6.2
 SPARK_HOME=${HOME}/scratch/spark-3.2.0-bin-hadoop3.2
 NODE_IP_PREFIX=10.149
-N_SPECIAL_NODES=3
+N_SPECIAL_NODES=1
 
 RESERVE_N=5
 RESERVE_T=00:15:00
@@ -59,8 +62,8 @@ done
 
 ### Determine IP addresses of special nodes
 nameNodeIP=${nodeIPList[0]}
-alluxioMasterIP=${nodeIPList[1]}
-sparkMasterIP=${nodeIPList[2]}
+alluxioMasterIP=${nodeIPList[0]}
+sparkMasterIP=${nodeIPList[0]}
 
 
 ### Set up Hadoop config files(sed command is some real magic)
@@ -102,13 +105,13 @@ done
 
 ### Execute startup scripts
 #Execute Hadoop (HDFS+YARN) startup script on namenode
-#ssh ddps2110@${nameNodeIP} "~/startHDFS.sh -f"
+ssh ddps2110@${nameNodeIP} "~/startHDFS.sh -f"
 
 #Execute Alluxio startup script on Alluxio master
-#ssh ddps2110@${alluxioMasterIP} "~/startAlluxio.sh"
+ssh ddps2110@${alluxioMasterIP} "~/startAlluxio.sh"
 
 # Execute Spark startup script on spark master
-#ssh ddps2110@${sparkMasterIP} "~/startSpark.sh"
+ssh ddps2110@${sparkMasterIP} "~/startSpark.sh"
 
 
 ### Echo information
